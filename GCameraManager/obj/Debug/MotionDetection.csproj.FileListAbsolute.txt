@@ -1,0 +1,15 @@
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\bin\Debug\MotionDetection.exe.config
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\bin\Debug\MotionDetection.exe
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\bin\Debug\MotionDetection.pdb
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\bin\Debug\OzekiComputerVision.dll
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\bin\Debug\OzekiSDK.dll
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.csprojResolveAssemblyReference.cache
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.MotionForm.resources
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.Properties.Resources.resources
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.csproj.GenerateResource.Cache
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.exe
+C:\Users\genevh\Documents\Ozeki\Ozeki SDK\Examples\Camera\04_ComputerVision\14_MotionDetection\MotionDetection\obj\Debug\MotionDetection.pdb
+C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\MotionDetection\bin\Debug\MotionDetection.exe.config
+C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\MotionDetection\obj\Debug\MotionDetection.exe
+C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\MotionDetection\obj\Debug\MotionDetection.pdb
+C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\MotionDetection\bin\Debug\GCameraManager.exe.config
