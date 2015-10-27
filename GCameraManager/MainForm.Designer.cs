@@ -31,6 +31,7 @@
 			this.components = new System.ComponentModel.Container();
 			this.videoViewerWF1 = new Ozeki.Media.Video.Controls.VideoViewerWF();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.viewCameraCb1 = new System.Windows.Forms.CheckBox();
 			this.comboBox1 = new System.Windows.Forms.ComboBox();
 			this.cameraStateLB1 = new System.Windows.Forms.Label();
 			this.disconnectBtn1 = new System.Windows.Forms.Button();
@@ -61,7 +62,6 @@
 			this.recordingStatusLB1 = new System.Windows.Forms.Label();
 			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
 			this.groupBox5 = new System.Windows.Forms.GroupBox();
-			this.viewCamera1 = new System.Windows.Forms.CheckBox();
 			this.recordingButtonsGB1 = new System.Windows.Forms.GroupBox();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.recordingButtonsGB2 = new System.Windows.Forms.GroupBox();
@@ -70,6 +70,7 @@
 			this.stopRecordingBTN2 = new System.Windows.Forms.Button();
 			this.videoViewerWF2 = new Ozeki.Media.Video.Controls.VideoViewerWF();
 			this.groupBox7 = new System.Windows.Forms.GroupBox();
+			this.viewCameraCb2 = new System.Windows.Forms.CheckBox();
 			this.cameraStateLB2 = new System.Windows.Forms.Label();
 			this.disconnectBtn2 = new System.Windows.Forms.Button();
 			this.connectBtn2 = new System.Windows.Forms.Button();
@@ -81,7 +82,6 @@
 			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
 			this.saveLogOnExitCb = new System.Windows.Forms.CheckBox();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-			this.viewCamera2 = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox4.SuspendLayout();
@@ -100,18 +100,16 @@
 			this.videoViewerWF1.FlipMode = Ozeki.Media.Video.FlipMode.None;
 			this.videoViewerWF1.FrameStretch = Ozeki.Media.Video.Controls.FrameStretch.Uniform;
 			this.videoViewerWF1.FullScreenEnabled = true;
-			this.videoViewerWF1.Location = new System.Drawing.Point(12, 198);
+			this.videoViewerWF1.Location = new System.Drawing.Point(12, 172);
 			this.videoViewerWF1.Name = "videoViewerWF1";
 			this.videoViewerWF1.RotateAngle = 0;
 			this.videoViewerWF1.Size = new System.Drawing.Size(368, 263);
 			this.videoViewerWF1.TabIndex = 0;
 			this.videoViewerWF1.Text = "9";
-			this.videoViewerWF1.FullScreenEnterEvent += new System.EventHandler<System.EventArgs>(this.videoViewerWF1_FullScreenEnterEvent);
-			this.videoViewerWF1.FullScreenLeaveEvent += new System.EventHandler<System.EventArgs>(this.videoViewerWF1_FullScreenLeaveEvent);
-			this.videoViewerWF1.DoubleClick += new System.EventHandler(this.videoViewerWF1_DoubleClick);
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.viewCameraCb1);
 			this.groupBox1.Controls.Add(this.comboBox1);
 			this.groupBox1.Controls.Add(this.cameraStateLB1);
 			this.groupBox1.Controls.Add(this.disconnectBtn1);
@@ -124,6 +122,19 @@
 			this.groupBox1.TabIndex = 1;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Connection url";
+			// 
+			// viewCameraCb1
+			// 
+			this.viewCameraCb1.AutoSize = true;
+			this.viewCameraCb1.Checked = true;
+			this.viewCameraCb1.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.viewCameraCb1.Location = new System.Drawing.Point(279, 50);
+			this.viewCameraCb1.Name = "viewCameraCb1";
+			this.viewCameraCb1.Size = new System.Drawing.Size(89, 17);
+			this.viewCameraCb1.TabIndex = 12;
+			this.viewCameraCb1.Text = "Display video";
+			this.viewCameraCb1.UseVisualStyleBackColor = true;
+			this.viewCameraCb1.CheckedChanged += new System.EventHandler(this.viewCamera_ci1_CheckedChanged);
 			// 
 			// comboBox1
 			// 
@@ -284,7 +295,7 @@
 			this.pixelAmountSensitivity.Name = "pixelAmountSensitivity";
 			this.pixelAmountSensitivity.Size = new System.Drawing.Size(30, 20);
 			this.pixelAmountSensitivity.TabIndex = 4;
-			this.pixelAmountSensitivity.Text = "100";
+			this.pixelAmountSensitivity.Text = "50";
 			this.toolTip1.SetToolTip(this.pixelAmountSensitivity, "The lower the value the more sensitive the motion detector will be because it wil" +
         "l react to a lower amount of pixel colour changes");
 			// 
@@ -294,7 +305,7 @@
 			this.pixelIntensitySensitivity.Name = "pixelIntensitySensitivity";
 			this.pixelIntensitySensitivity.Size = new System.Drawing.Size(30, 20);
 			this.pixelIntensitySensitivity.TabIndex = 3;
-			this.pixelIntensitySensitivity.Text = "15";
+			this.pixelIntensitySensitivity.Text = "5";
 			this.toolTip1.SetToolTip(this.pixelIntensitySensitivity, "The lower the value the more sensitive the motion detector will be because it wil" +
         "l react to a lower number of pixel changes as well.");
 			// 
@@ -416,7 +427,6 @@
 			// 
 			// groupBox5
 			// 
-			this.groupBox5.Controls.Add(this.viewCamera1);
 			this.groupBox5.Controls.Add(this.recordingButtonsGB1);
 			this.groupBox5.Controls.Add(this.videoViewerWF1);
 			this.groupBox5.Controls.Add(this.groupBox1);
@@ -426,19 +436,6 @@
 			this.groupBox5.TabIndex = 10;
 			this.groupBox5.TabStop = false;
 			this.groupBox5.Text = "Camera 1:";
-			// 
-			// viewCamera1
-			// 
-			this.viewCamera1.AutoSize = true;
-			this.viewCamera1.Checked = true;
-			this.viewCamera1.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.viewCamera1.Location = new System.Drawing.Point(293, 175);
-			this.viewCamera1.Name = "viewCamera1";
-			this.viewCamera1.Size = new System.Drawing.Size(89, 17);
-			this.viewCamera1.TabIndex = 12;
-			this.viewCamera1.Text = "Display video";
-			this.viewCamera1.UseVisualStyleBackColor = true;
-			this.viewCamera1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
 			// 
 			// recordingButtonsGB1
 			// 
@@ -455,7 +452,6 @@
 			// 
 			// groupBox3
 			// 
-			this.groupBox3.Controls.Add(this.viewCamera2);
 			this.groupBox3.Controls.Add(this.recordingButtonsGB2);
 			this.groupBox3.Controls.Add(this.videoViewerWF2);
 			this.groupBox3.Controls.Add(this.groupBox7);
@@ -515,7 +511,7 @@
 			this.videoViewerWF2.FlipMode = Ozeki.Media.Video.FlipMode.None;
 			this.videoViewerWF2.FrameStretch = Ozeki.Media.Video.Controls.FrameStretch.Uniform;
 			this.videoViewerWF2.FullScreenEnabled = true;
-			this.videoViewerWF2.Location = new System.Drawing.Point(6, 198);
+			this.videoViewerWF2.Location = new System.Drawing.Point(6, 172);
 			this.videoViewerWF2.Name = "videoViewerWF2";
 			this.videoViewerWF2.RotateAngle = 0;
 			this.videoViewerWF2.Size = new System.Drawing.Size(368, 263);
@@ -524,6 +520,7 @@
 			// 
 			// groupBox7
 			// 
+			this.groupBox7.Controls.Add(this.viewCameraCb2);
 			this.groupBox7.Controls.Add(this.cameraStateLB2);
 			this.groupBox7.Controls.Add(this.disconnectBtn2);
 			this.groupBox7.Controls.Add(this.connectBtn2);
@@ -535,6 +532,19 @@
 			this.groupBox7.TabIndex = 1;
 			this.groupBox7.TabStop = false;
 			this.groupBox7.Text = "Connection url";
+			// 
+			// viewCameraCb2
+			// 
+			this.viewCameraCb2.AutoSize = true;
+			this.viewCameraCb2.Checked = true;
+			this.viewCameraCb2.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.viewCameraCb2.Location = new System.Drawing.Point(279, 49);
+			this.viewCameraCb2.Name = "viewCameraCb2";
+			this.viewCameraCb2.Size = new System.Drawing.Size(89, 17);
+			this.viewCameraCb2.TabIndex = 13;
+			this.viewCameraCb2.Text = "Display video";
+			this.viewCameraCb2.UseVisualStyleBackColor = true;
+			this.viewCameraCb2.CheckedChanged += new System.EventHandler(this.viewCamera_ci2_CheckedChanged);
 			// 
 			// cameraStateLB2
 			// 
@@ -625,18 +635,6 @@
 			this.saveLogOnExitCb.Text = "Save log on exit";
 			this.saveLogOnExitCb.UseVisualStyleBackColor = true;
 			// 
-			// viewCamera2
-			// 
-			this.viewCamera2.AutoSize = true;
-			this.viewCamera2.Checked = true;
-			this.viewCamera2.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.viewCamera2.Location = new System.Drawing.Point(285, 175);
-			this.viewCamera2.Name = "viewCamera2";
-			this.viewCamera2.Size = new System.Drawing.Size(89, 17);
-			this.viewCamera2.TabIndex = 13;
-			this.viewCamera2.Text = "Display video";
-			this.viewCamera2.UseVisualStyleBackColor = true;
-			// 
 			// MotionForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -660,10 +658,8 @@
 			this.recordingSettingsGB1.ResumeLayout(false);
 			this.recordingSettingsGB1.PerformLayout();
 			this.groupBox5.ResumeLayout(false);
-			this.groupBox5.PerformLayout();
 			this.recordingButtonsGB1.ResumeLayout(false);
 			this.groupBox3.ResumeLayout(false);
-			this.groupBox3.PerformLayout();
 			this.recordingButtonsGB2.ResumeLayout(false);
 			this.groupBox7.ResumeLayout(false);
 			this.groupBox7.PerformLayout();
@@ -726,8 +722,8 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox maxVideoLength;
         private System.Windows.Forms.ToolTip toolTip1;
-		private System.Windows.Forms.CheckBox viewCamera1;
-		private System.Windows.Forms.CheckBox viewCamera2;
+		private System.Windows.Forms.CheckBox viewCameraCb1;
+		private System.Windows.Forms.CheckBox viewCameraCb2;
 	}
 }
 

@@ -22,13 +22,14 @@ namespace GCameraManager
     MediaConnector connector;
     MPEG4Recorder recorder;
     static VideoResizer videoResizer;
+		public string id;
+		public VideoViewerWF videoViewer;
 
-    public delegate void ConnectedEventHandler(object sender, EventArgs e);
-    public delegate void DisonnectedEventHandler(object sender, EventArgs e);
-    VideoViewerWF videoViewer;
+		//public delegate void ConnectedEventHandler(object sender, EventArgs e);
+		//public delegate void DisonnectedEventHandler(object sender, EventArgs e);
 
-    #region Events
-    public delegate void EventHandler(object sender, CameraStateEventArgs e);
+		#region Events
+		public delegate void EventHandler(object sender, CameraStateEventArgs e);
 
     /// <summary>
     /// Event will be raised when camera state is changed
@@ -37,7 +38,7 @@ namespace GCameraManager
     protected void OnCameraStateChanged(object sender, CameraStateEventArgs e)
     {
       if (CameraStateChanged != null)
-        CameraStateChanged(sender, e);
+        CameraStateChanged(this, e); //Change the sender to this CCI
     }
     public event EventHandler<CameraErrorEventArgs> CameraErrorOccurred;
     protected void OnCameraErrorOccurred(object sender, CameraErrorEventArgs e)
@@ -50,7 +51,7 @@ namespace GCameraManager
     /// <summary>
     /// Event that will be raised when the camera starts/ends video capturing
     /// </summary>
-    VideoCapturingState videoCapturingState;
+    public VideoCapturingState videoCapturingState;
     public event EventHandler<VideoCapturingEventArgs> VideoCapturingStateChanged;
     protected void OnVideoCapturingStateChanged(object sender, VideoCapturingEventArgs e)
     {
@@ -62,22 +63,22 @@ namespace GCameraManager
         VideoCapturingStateChanged(sender, e);
     }
     #endregion
-
-
-    public CameraConfigurationItem(VideoViewerWF videoViewer)
+		
+    public CameraConfigurationItem(string cameraId, VideoViewerWF videoViewer)
     {
       this.videoViewer = videoViewer;
+			this.id = cameraId;
       provider = new DrawingImageProvider();
       connector = new MediaConnector();
       detector = new MotionDetector();
       videoResizer = new VideoResizer();
-      //detector.PixelIntensitySensitivy = Convert.ToInt32(pixelIntensitySensitivity.Text); //0-255
-      //detector.PixelAmountSensitivy = Convert.ToInt32(pixelAmountSensitivity.Text) / 10; //0-10
+			detector.PixelIntensitySensitivy = Settings.PixelIntensitySensitivity; //0-255
+			detector.PixelAmountSensitivy = Settings.PixelAmountSensitivity; //0-10
 
-      videoViewer.SetImageProvider(provider);
+			videoViewer.SetImageProvider(provider);
     }
 
-    internal void Initialize(string url)
+    internal void Connect(string url)
     {
       if (camera != null)
         Disconnect();
@@ -86,15 +87,19 @@ namespace GCameraManager
       camera.CameraStateChanged += OnCameraStateChanged;
       camera.CameraErrorOccurred += OnCameraErrorOccurred;
 
-      connector.Connect(camera.VideoChannel, detector);
-      //connector.Connect(detector, provider);
+			Log.Write("StopVideoCapturing() Connecting camera.VideoChannel and detector");
+			connector.Connect(camera.VideoChannel, detector);
+      //connector.Connect(detector, provider); //Needed if we want to highlight the motion on screen
+			Log.Write("StopVideoCapturing() Connecting camera.VideoChannel and provider");
       connector.Connect(camera.VideoChannel, provider);
 
       camera.Start();
-			if (Settings.VideoViewer1Visible)
+			if (videoViewerVisible)
 				videoViewer.Start();
     }
 
+		bool videoViewerVisible = false;
+		public bool VideoViewerVisible { get { return videoViewerVisible; } set { videoViewerVisible = value; } }
 
     internal void Disconnect()
     {
@@ -103,10 +108,13 @@ namespace GCameraManager
 
       videoViewer.Stop();
       camera.Stop();
-      connector.Disconnect(camera.VideoChannel, detector);
+
+			Log.Write("StopVideoCapturing() Disconnecting camera.VideoChannel and detector");
+			connector.Disconnect(camera.VideoChannel, detector);
+			Log.Write("StopVideoCapturing() Disconnecting camera.VideoChannel and provider");
       connector.Disconnect(camera.VideoChannel, provider);
-      //connector.Disconnect(detector, provider);
-      camera = null;
+			//connector.Disconnect(detector, provider);
+			camera = null;
     }
 
     internal void CancelRecording()
@@ -122,7 +130,7 @@ namespace GCameraManager
 
       if (Settings.RecordOnMotion)
       {
-        detector.MotionDetection -= detector_MotionDetection;
+        detector.MotionDetection -= OnMotionDetection;
         detector.Dispose();
       }
     }
@@ -137,9 +145,11 @@ namespace GCameraManager
       //If we are capturing video
       if (camera.VideoChannel != null && recorder.VideoRecorder != null)
       {
-        //connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
-        connector.Disconnect(camera.VideoChannel, videoResizer);
-        connector.Disconnect(videoResizer, recorder.VideoRecorder);
+				//connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
+				Log.Write("StopVideoCapturing() Disconnecting camera.VideoChannel and videoResizer");
+				connector.Disconnect(camera.VideoChannel, videoResizer);
+				Log.Write("StopVideoCapturing() Disconnecting videoResizer and recorder.VideoRecorder");
+				connector.Disconnect(videoResizer, recorder.VideoRecorder);
         //Multiplex and compress audio and video in a single track
         Log.Write("StopVideoCapturing() calling recorder.Multiplex()");
         recorder.Multiplex();
@@ -164,8 +174,6 @@ namespace GCameraManager
       Log.Write("recorder_MultiplexFinished() ended");
     }
 
-    string SaveToDir = "";
-
     internal void StartRecording()
     {
       if (Settings.RecordOnMotion)
@@ -176,23 +184,21 @@ namespace GCameraManager
 
     void StartRecordingOnMotionDetection()
     {
-      detector.MotionDetection += detector_MotionDetection;
+      detector.MotionDetection += OnMotionDetection;
       detector.Start();
       OnVideoCapturingStateChanged(this, new VideoCapturingEventArgs(VideoCapturingState.WaitingForMotion));
     }
-
-    bool inMotion = false;
-    bool isMinTimerActive = false;
-    bool isMaxTimerActive = false;
+		
     Timer minRecTimer;
     Timer maxRecTimer;
+		bool inMotion;
 
-    void detector_MotionDetection(object sender, MotionDetectionEvent e)
+		void OnMotionDetection(object sender, MotionDetectionEvent e)
     {
-      Log.Write("detector_MotionDetection(" + e.Detection + ") started");
+			inMotion = e.Detection;
+      Log.Write("OnMotionDetection(" + e.Detection + ") started");
       if (e.Detection)
       {
-        inMotion = true;
         //If we are already recording when motion was detected
         if (videoCapturingState.Equals(VideoCapturingState.Recording))
           return;
@@ -200,144 +206,143 @@ namespace GCameraManager
       }
       else
       {
-        inMotion = false;
         //If motion has stopped and minimum recording time has elapsed stop the recording
-        Log.Write("detector_MotionDetection(" + e.Detection + ") isMinTimerActive == " + isMinTimerActive);
-        if (!isMinTimerActive)
+        Log.Write("OnMotionDetection(" + e.Detection + ") minRecTimer.Enabled == " + minRecTimer.Enabled);
+        if (!minRecTimer.Enabled)
         {
-          Log.Write("detector_MotionDetection(" + e.Detection + ") Motion ended, minimum timer ended. Stopping video capturing");
+          Log.Write("OnMotionDetection(" + e.Detection + ") Motion ended, minimum timer ended. Stopping video capturing");
           StopVideoCapturing();
         }
       }
-      Log.Write("detector_MotionDetection(" + e.Detection + ") ended");
+      Log.Write("OnMotionDetection(" + e.Detection + ") ended");
     }
 
-    void MinRecordingTimeElapsed(object sender, MPEG4Recorder recorder)
-    {
-      Log.Write("MinRecordingTimeElapsed() started");
+		/// <summary>
+		/// Start capturing video 
+		/// </summary>
+		void StartVideoCapturing()
+		{
+			Log.Write("StartVideoCapturing() started");
 
-      var timer = sender as Timer;
-      if (timer != null)
-      {
-        timer.Stop();
-        timer.Dispose();
-        isMinTimerActive = false;
-        Log.Write("MinTimer ended!");
-      }
+			if (camera.VideoChannel != null)
+			{
+				Log.Write("StartVideoCapturing() Camera" + id + ".CurrentFrameRate: " + camera.CurrentFrameRate.ToString());
+				videoResizer.SetOptions(camera.Resolution, camera.CurrentFrameRate);
+				Log.Write("StopVideoCapturing() Connecting camera.VideoChannel and videoResizer");
+				connector.Connect(camera.VideoChannel, videoResizer);
 
-      //If a false MotionDetectionEvent has been raised, stop the capturing and reset the maxRecTimer
-      //otherwise continue with the recording
-      Log.Write("inMotion == " + inMotion + "");
-      if (!inMotion)
-      {
-        Log.Write("MinRecordingTimeElapsed() Motion has stopped, stopping the video capturing");
-        
-        if (maxRecTimer != null)
-        {
-          maxRecTimer.Enabled = false;
-          maxRecTimer.Stop();
-          maxRecTimer.Dispose();
-          isMaxTimerActive = false;
-          Log.Write("MaxTimer forced to end!");
-        }
-        StopVideoCapturing();
-      }
-      else
-        Log.Write("MinRecordingTimeElapsed() There is still motion, so continue with the video capturing");
-      //connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
-      Log.Write("MinRecordingTimeElapsed() ended");
-    }
+				var filePath = GetFileName();
+				Log.Write("StartVideoCapturing() Video file path set to: " + filePath);
+				recorder = new MPEG4Recorder(filePath);
+				Log.Write("StopVideoCapturing() Connecting videoResizer and recorder.VideoRecorder");
+				connector.Connect(videoResizer, recorder.VideoRecorder);
+				recorder.MultiplexFinished += recorder_MultiplexFinished;
+				//connector.Connect(_camera.AudioChannel, _recorder.AudioRecorder);
 
-    /// <summary>
-    /// Maximum video length time has ellapsed
-    /// Stop all recording, 
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="recorder"></param>
-    void MaxRecordingTimeElapsed(object sender, MPEG4Recorder recorder)
-    {
-      if (!videoCapturingState.Equals(VideoCapturingState.Recording))
-        return;
+				if (Settings.RecordOnMotion)
+				{
+					StartTimer(minRecTimer, Settings.MinVideoLength);
+					StartTimer(maxRecTimer, Settings.MaxVideoLength);
+				}
+				//Raise recording event
+				OnVideoCapturingStateChanged(this, new VideoCapturingEventArgs(VideoCapturingState.Recording));
+			}
+			Log.Write("StartVideoCapturing() ended");
+		}
 
-      Log.Write("MaxRecordingTimeElapsed() started");
+		void StartTimer(Timer timer, double time)
+		{
+			timer = new Timer();
+			timer.Interval = time * 1000;
+			timer.AutoReset = false; // Raise Elapsed event only the first time it elapsed
 
-      var timer = sender as Timer;
-      if (timer != null)
-      {
-        timer.Stop();
-        timer.Dispose();
-        isMaxTimerActive = false;
-        Log.Write("MaxTimer ended!");
-      }
+			if (time == Settings.MinVideoLength)
+			{
+				Log.Write("StartTimer() Mintimer started!");
+				timer.Elapsed += (send, args) => MinRecordingTimeElapsed(send, recorder);
+			}
+			else
+			{
+				Log.Write("StartTimer() Maxtimer started!");
+				timer.Elapsed += (send, args) => MaxRecordingTimeElapsed(send, recorder);
+			}
+			timer.Start();
+		}
 
-      StopVideoCapturing();
+		void StopTimer(Timer timer)
+		{
+			if (timer != null)
+			{
+				timer.Stop();
+				timer.Dispose();
+			}
+		}
 
-      //If there is still motion, start a new recording
-      if (inMotion)
-      {
-        Log.Write("inMotion == true, so starting a new recording");
-        StartVideoCapturing();
-      }
-      //connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
-      Log.Write("MaxRecordingTimeElapsed() ended");
-    }
+		/// <summary>
+		/// Maximum video length time has ellapsed
+		/// Stop all recording, 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="recorder"></param>
+		void MaxRecordingTimeElapsed(object sender, MPEG4Recorder recorder)
+		{
+			Log.Write("MaxRecordingTimeElapsed() started");
+			if (!videoCapturingState.Equals(VideoCapturingState.Recording))
+				return;
 
-    void StartVideoCapturing()
-    {
-      Log.Write("StartVideoCapturing() started");
+			StopTimer(minRecTimer);
+			Log.Write("MaxRecordingTimeElapsed() MaxTimer ended!");
+			StopVideoCapturing();
 
-      //Check if directory exists
-      if (Directory.Exists(Settings.SaveToDirectory))
-      {
-        SaveToDir = Path.Combine(Settings.SaveToDirectory, camera.DeviceName.ToString());
-        if (!Directory.Exists(SaveToDir))
-          Directory.CreateDirectory(SaveToDir);
-      }
+			//If there is still motion, start a new recording
+			if (inMotion)
+			{
+				Log.Write("MaxRecordingTimeElapsed() inMotion == true, so starting a new recording");
+				StartVideoCapturing();
+			}
+			//connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
+			Log.Write("MaxRecordingTimeElapsed() ended");
+		}
 
-      //ChangeRecordingStatus(recordingStatusLB1, "Recording");
-      if (camera.VideoChannel == null)
-        return;
+		void MinRecordingTimeElapsed(object sender, MPEG4Recorder recorder)
+		{
+			Log.Write("MinRecordingTimeElapsed() started");
 
-      var date = DateTime.Now.Year + "-" + DateTime.Now.Month.ToString("00") + "-" + DateTime.Now.Day.ToString("00") + "-" +
-                  DateTime.Now.Hour.ToString("00") + "-" + DateTime.Now.Minute.ToString("00") + "-" + DateTime.Now.Second.ToString("00");
+			StopTimer(minRecTimer);
+			Log.Write("MinRecordingTimeElapsed() MinTimer ended!");
 
-      var currentpath = Path.Combine(SaveToDir, date + ".mp4");
+			//If a false MotionDetectionEvent has been raised, stop the capturing and reset the maxRecTimer
+			//otherwise continue with the recording
+			Log.Write("motion.Detection == " + inMotion);
+			if (!inMotion)
+			{
+				Log.Write("MinRecordingTimeElapsed() Motion has stopped, stopping the video capturing");
+				StopTimer(maxRecTimer);
+				Log.Write("MinRecordingTimeElapsed() MaxTimer forced to end!");
+				StopVideoCapturing();
+			}
+			else
+				Log.Write("MinRecordingTimeElapsed() There is still motion, so continue with the video capturing");
+			//connector.Disconnect(camera.VideoChannel, recorder.VideoRecorder);
+			Log.Write("MinRecordingTimeElapsed() ended");
+		}
 
-      Log.Write("Camera1 CurrentFrameRate: " + camera.CurrentFrameRate.ToString());
-      videoResizer.SetOptions(640, 480, 15);
-      connector.Connect(camera.VideoChannel, videoResizer);
+		string GetFileName()
+		{
+			//Check if directory exists
+			string SaveToDir = "";
+			if (Directory.Exists(Settings.SaveToDirectory))
+			{
+				SaveToDir = Path.Combine(Settings.SaveToDirectory, camera.DeviceName.ToString());
+				if (!Directory.Exists(SaveToDir))
+					Directory.CreateDirectory(SaveToDir);
+			}
+			var fileName = DateTime.Now.Year + "-" + DateTime.Now.Month.ToString("00") + "-" + DateTime.Now.Day.ToString("00") + "-" +
+									DateTime.Now.Hour.ToString("00") + "-" + DateTime.Now.Minute.ToString("00") + "-" + DateTime.Now.Second.ToString("00") + ".mp4";
 
-      Log.Write("Video file path set to: " + currentpath);
-      recorder = new MPEG4Recorder(currentpath);
-      connector.Connect(videoResizer, recorder.VideoRecorder);
-      recorder.MultiplexFinished += recorder_MultiplexFinished;
-      //connector.Connect(_camera.AudioChannel, _recorder.AudioRecorder);
-
-      if (Settings.RecordOnMotion)
-      {
-        //Start the minimum video lenght timer
-        minRecTimer = new Timer();
-        maxRecTimer = new Timer();
-        minRecTimer.Elapsed += (send, args) => MinRecordingTimeElapsed(send, recorder);
-        maxRecTimer.Elapsed += (send, args) => MaxRecordingTimeElapsed(send, recorder);
-        minRecTimer.Interval = Settings.MinVideoLength * 1000;
-        maxRecTimer.Interval = Settings.MaxVideoLength * 1000;
-        minRecTimer.AutoReset = false; // Raise Elapsed event only the first time it elapsed
-        maxRecTimer.AutoReset = false;
-
-        minRecTimer.Start();
-        isMinTimerActive = true;
-        Log.Write("Mintimer started!");
-        maxRecTimer.Start();
-        isMaxTimerActive = true;
-        Log.Write("Maxtimer started!");
-      }
-      //Raise recording event
-      OnVideoCapturingStateChanged(this, new VideoCapturingEventArgs(VideoCapturingState.Recording));
-
-      Log.Write("StartVideoCapturing() ended");
-    }
-  }
+			return Path.Combine(SaveToDir, fileName);
+		}
+	}
 
   public class VideoCapturingEventArgs : EventArgs
   {

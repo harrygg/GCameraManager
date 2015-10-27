@@ -17,3 +17,12 @@ C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\GCameraMana
 C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\GCameraManager\obj\Debug\GCameraManager.csproj.GenerateResource.Cache
 C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\GCameraManager\bin\Debug\OzekiSDK.dll
 C:\Users\genevh\Documents\Visual Studio 2010\Projects\GCameraManager\GCameraManager\obj\Debug\GCameraManager.MotionForm.resources
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\bin\Debug\GCameraManager.exe.config
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.exe
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.pdb
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\bin\Debug\GCameraManager.exe
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\bin\Debug\GCameraManager.pdb
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.csprojResolveAssemblyReference.cache
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.MotionForm.resources
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.Properties.Resources.resources
+C:\Users\genevh\Documents\GitHub\GCameraManager\GCameraManager\obj\Debug\GCameraManager.csproj.GenerateResource.Cache

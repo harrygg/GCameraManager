@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CameraConfigurationItem.cs" />
+    <Compile Include="CmdArguments.cs" />
     <Compile Include="Log\Log.cs" />
     <Compile Include="Log\LogEventArgs.cs" />
     <Compile Include="MainForm.cs">

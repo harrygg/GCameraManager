@@ -6,9 +6,9 @@ namespace GCameraManager
 {
   class VideoResizer : VideoHandler
   {
-    public void SetOptions(int width, int height, double frameRate, VideoType videoType = VideoType.Uncompressed)
+    public void SetOptions(Resolution res, double frameRate, VideoType videoType = VideoType.Uncompressed)
     {
-      SetSupportedFormats(new[] { new VideoFormat(VideoType.Uncompressed, frameRate, new Resolution(width, height)) });
+      SetSupportedFormats(new[] { new VideoFormat(videoType, frameRate, res) });
     }
 
     public override void OnDataReceived(object sender, VideoData data)

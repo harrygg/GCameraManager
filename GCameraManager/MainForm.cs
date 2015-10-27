@@ -1,28 +1,15 @@
-﻿using Ozeki.Camera;
-using Ozeki.Camera.Data;
-using Ozeki.Media;
-using Ozeki.Media.IPCamera;
-using Ozeki.Media.MediaHandlers;
-using Ozeki.Media.MediaHandlers.Video;
-using Ozeki.Media.MediaHandlers.Video.CV;
-using Ozeki.Media.Video;
+﻿using Ozeki.Camera.Data;
 using Ozeki.Media.Video.Controls;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GCameraManager
 {
   public partial class MotionForm : Form
   {
-    CameraConfigurationItem ci1;
-    CameraConfigurationItem ci2;
+    CameraConfigurationItem cci1;
+    CameraConfigurationItem cci2;
 
     CameraURLBuilderWF cameraUrlBuilder;
 
@@ -32,46 +19,61 @@ namespace GCameraManager
       InitializeComponent();
       Log.OnLogMessageReceived += Log_OnLogMessageReceived;
 
-      ci1 = new CameraConfigurationItem(videoViewerWF1);
-      ci1.CameraStateChanged += camera_CameraStateChanged;
-      ci1.VideoCapturingStateChanged += OnVideoCapturingStateChanged1;
+      cci1 = new CameraConfigurationItem("1", videoViewerWF1);
+      cci1.CameraStateChanged += OnCameraStateChanged;
+      cci1.VideoCapturingStateChanged += OnVideoCapturingStateChanged;
+			cci1.VideoViewerVisible = viewCameraCb1.Checked;
 
-      ci2 = new CameraConfigurationItem(videoViewerWF2);
-      ci2.CameraStateChanged += camera2_CameraStateChanged;
+      cci2 = new CameraConfigurationItem("2", videoViewerWF2);
+      cci2.CameraStateChanged += OnCameraStateChanged;
+      cci2.VideoCapturingStateChanged += OnVideoCapturingStateChanged;
+			cci2.VideoViewerVisible = viewCameraCb2.Checked;
 
-      var data = new CameraURLBuilderData { IPCameraEnabled = false };
+			var data = new CameraURLBuilderData { IPCameraEnabled = false };
       cameraUrlBuilder = new CameraURLBuilderWF(data);
- 
     }
 
     #region Events handling
 
     #region Form events
-      void MotionForm_Load(object sender, EventArgs e)
+    void MotionForm_Load(object sender, EventArgs e)
+    {
+      Log.Write("GCameraManager started! Form loaded!");
+
+			//Set settings
+			SaveSettings();
+
+      if (!IsValidCameraUrl(cameraUrlTB1.Text))
+        connectBtn1.Enabled = false;
+      else
       {
-        Log.Write("GCameraManager started!");
-
-        Settings.SaveToDirectory = saveToDirTb1.Text;
-        Settings.RecordOnMotion = recordingOnMotionCB.Checked;
-        Settings.MinVideoLength = Int32.Parse(minVideoLength.Text);
-				Settings.VideoViewer1Visible = viewCamera1.Checked;
-
-        if (!IsValidCameraUrl(cameraUrlTB1.Text))
-          connectBtn1.Enabled = false;
-        else
-        {
-          disconnectBtn1.Enabled = false;
-          //If connect on startup is enabled
-          if (true)
-            ci1.Initialize(cameraUrlTB1.Text);
-        }
-
-        if (!IsValidCameraUrl(cameraUrlTB2.Text))
-          connectBtn2.Enabled = false;
-        disconnectBtn2.Enabled = false;
+        disconnectBtn1.Enabled = false;
+        //If connect on startup is enabled
+        if (CmdArguments.IsAutoConnect(cci1))
+          cci1.Connect(cameraUrlTB1.Text);
       }
 
-      void MotionForm_Closing(object sender, FormClosingEventArgs e)
+      if (!IsValidCameraUrl(cameraUrlTB2.Text))
+        connectBtn2.Enabled = false;
+			else
+			{ 
+				disconnectBtn2.Enabled = false;
+				//If connect on startup is enabled
+				if (CmdArguments.IsAutoConnect(cci2))
+					cci2.Connect(cameraUrlTB2.Text);
+			}
+		}
+
+		void SaveSettings()
+		{
+			Settings.SaveToDirectory = saveToDirTb1.Text;
+			Settings.RecordOnMotion = recordingOnMotionCB.Checked;
+			Settings.MinVideoLength = Int32.Parse(minVideoLength.Text);
+			Settings.PixelIntensitySensitivity = Int32.Parse(pixelIntensitySensitivity.Text);
+			Settings.PixelAmountSensitivity = Int32.Parse(pixelAmountSensitivity.Text);
+		}
+
+		void MotionForm_Closing(object sender, FormClosingEventArgs e)
       {
         // Display a MsgBox asking the user to save changes or abort. 
         /*if (MessageBox.Show("Do you really want to exit?", "GCameraManager", MessageBoxButtons.YesNo) == DialogResult.No)
@@ -80,7 +82,7 @@ namespace GCameraManager
           e.Cancel = true;
           return;
         }*/
-        //IF Save log file is enabled
+        //If Save log file is enabled
         if (saveLogOnExitCb.Checked)
           saveLogTo(Path.Combine(Settings.SaveToDirectory, Log.fileName));
       }
@@ -103,133 +105,109 @@ namespace GCameraManager
         logListBox.SelectedIndex = -1;
       }
 
-      #endregion
+		#endregion
 
-    void OnVideoCapturingStateChanged1(object sender, VideoCapturingEventArgs e)
+		#region Handle Camera Events
+
+		/// <summary>
+		/// Handler for the CameraStateChanged event
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void OnCameraStateChanged(object sender, CameraStateEventArgs e)
+		{
+			var cci = sender as CameraConfigurationItem;
+			var connectBtn = this.Controls.Find("connectBtn" + cci.id, true)[0] as Button;
+			var disconnectBtn = this.Controls.Find("disconnectBtn" + cci.id, true)[0] as Button;
+			var composeBtn = this.Controls.Find("composeBtn" + cci.id, true)[0] as Button;
+			var recordingButtons = this.Controls.Find("recordingButtonsGB" + cci.id, true)[0] as GroupBox;
+			var cameraUrl = this.Controls.Find("cameraUrlTB" + cci.id, true)[0] as TextBox;
+			var cameraState = this.Controls.Find("cameraStateLB" + cci.id, true)[0] as Label;
+
+			InvokeGuiThread(() =>
+			{
+				switch (e.State)
+				{
+					case CameraState.Streaming:
+						disconnectBtn.Enabled = true;
+						connectBtn.Enabled = false;
+						//recordingSettingsGB1.Enabled = true;
+						composeBtn.Enabled = false;
+						cameraUrl.Enabled = false;
+						cameraState.ForeColor = System.Drawing.Color.Green;
+						recordingButtons.Enabled = true;
+						break;
+					case CameraState.Disconnected:
+						disconnectBtn.Enabled = false;
+						connectBtn.Enabled = true;
+						composeBtn.Enabled = true;
+						cameraUrl.Enabled = true;
+						cameraState.ForeColor = System.Drawing.Color.Red;
+						//recordingSettingsGB1.Enabled = false;
+						recordingButtons.Enabled = false;
+						break;
+					case CameraState.Connected:
+						connectBtn.Enabled = false;
+						composeBtn.Enabled = false;
+						disconnectBtn.Enabled = true;
+						cameraUrl.Enabled = false;
+						recordingButtons.Enabled = true;
+						cameraState.ForeColor = System.Drawing.Color.Green;
+						break;
+					case CameraState.Error:
+						connectBtn.Enabled = true;
+						composeBtn.Enabled = true;
+						cameraUrl.Enabled = true;
+						cameraState.ForeColor = System.Drawing.Color.Red;
+						//Log error
+						break;
+				}
+			});
+			ChangeRecordingStatus(cameraState, e.State.ToString());
+			Log.Write("Camera" + cci.id + ": Recording status changed: " + e.State.ToString());
+		}
+
+		/*void camera_CameraErrorOccurred(object sender, CameraErrorEventArgs e)
+		{
+			InvokeGuiThread(() => Log.Write("Camera error: " + (e.Details ?? e.Error.ToString())));
+		}*/
+
+		/// <summary>
+		/// Handler for the VideoCapturingStateChanged event
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void OnVideoCapturingStateChanged(object sender, VideoCapturingEventArgs e)
     {
+			var cci = sender as CameraConfigurationItem;
+			var startRecordingBtn = this.Controls.Find("startRecordingBTN" + cci.id, true)[0] as Button;
+			var stopRecordingBtn = this.Controls.Find("stopRecordingBTN" + cci.id, true)[0] as Button;
+			var recordingStatusLB = this.Controls.Find("recordingStatusLB" + cci.id, true)[0] as Label;
+
       InvokeGuiThread(() =>
       {
         switch (e.CapturingState)
         {
           case VideoCapturingState.Recording:
-            startRecordingBTN1.Enabled = false;
-            stopRecordingBTN1.Enabled = true;
+            startRecordingBtn.Enabled = false;
+						stopRecordingBtn.Enabled = true;
             break;
-          //case VideoCapturingState.WaitingForMotion:
-          //  startRecordingBTN1.Enabled = false;
-          //  stopRecordingBTN1.Enabled = true;
-          //  break;
           case VideoCapturingState.Stopped:
-            startRecordingBTN1.Enabled = true;
-            stopRecordingBTN1.Enabled = false;
+						startRecordingBtn.Enabled = true;
+						stopRecordingBtn.Enabled = false;
             break;
         }
       });
-      ChangeRecordingStatus(recordingStatusLB1, e.CapturingState.ToString());
-      Log.Write("Camera1: Capturing status changed: " + e.CapturingState.ToString());
-    }
-
-    void camera_CameraStateChanged(object sender, CameraStateEventArgs e)
-    {
-      InvokeGuiThread(() =>
-      {
-        switch (e.State)
-        {
-          case CameraState.Streaming:
-            disconnectBtn1.Enabled = true;
-            connectBtn1.Enabled = false;
-            //recordingSettingsGB1.Enabled = true;
-            composeBtn1.Enabled = false;
-            cameraUrlTB1.Enabled = false;
-            cameraStateLB1.ForeColor = System.Drawing.Color.Green;
-            recordingButtonsGB1.Enabled = true;
-            break;
-          case CameraState.Disconnected:
-            disconnectBtn1.Enabled = false;
-            connectBtn1.Enabled = true;
-            composeBtn1.Enabled = true;
-            cameraUrlTB1.Enabled = true;
-            cameraStateLB1.ForeColor = System.Drawing.Color.Red;
-            //recordingSettingsGB1.Enabled = false;
-            recordingButtonsGB1.Enabled = false;
-            break;
-          case CameraState.Connected:
-            connectBtn1.Enabled = false;
-            composeBtn1.Enabled = false;
-            disconnectBtn1.Enabled = true;
-            cameraUrlTB1.Enabled = false;
-            recordingButtonsGB1.Enabled = true;
-            cameraStateLB1.ForeColor = System.Drawing.Color.Green;
-            break;
-          case CameraState.Error:
-            connectBtn1.Enabled = true;
-            composeBtn1.Enabled = true;
-            cameraUrlTB1.Enabled = true;
-            cameraStateLB1.ForeColor = System.Drawing.Color.Red;
-            //Log error
-            break;
-        }
-      });
-      ChangeRecordingStatus(cameraStateLB1, e.State.ToString());
-      Log.Write("Camera1: Recording status changed: " + e.State.ToString());
+      ChangeRecordingStatus(recordingStatusLB, e.CapturingState.ToString());
+      Log.Write("Camera" + cci.id + ": Capturing status changed: " + e.CapturingState.ToString());
     }
 
 
-    void camera2_CameraStateChanged(object sender, CameraStateEventArgs e)
-    {
-      InvokeGuiThread(() =>
-      {
-        switch (e.State)
-        {
-          case CameraState.Streaming:
-            disconnectBtn2.Enabled = true;
-            connectBtn2.Enabled = false;
-            composeBtn2.Enabled = false;
-            cameraUrlTB2.Enabled = false;
-            cameraStateLB2.ForeColor = System.Drawing.Color.Green;
-            recordingButtonsGB2.Enabled = true;
-            break;
-          case CameraState.Disconnected:
-            disconnectBtn2.Enabled = false;
-            connectBtn2.Enabled = true;
-            composeBtn2.Enabled = true;
-            cameraUrlTB2.Enabled = true;
-            cameraStateLB2.ForeColor = System.Drawing.Color.Red;
-            recordingButtonsGB2.Enabled = false;
-            break;
-          case CameraState.Connected:
-            connectBtn2.Enabled = false;
-            composeBtn2.Enabled = false;
-            disconnectBtn2.Enabled = true;
-            cameraUrlTB2.Enabled = false;
-            recordingButtonsGB2.Enabled = true;
-            cameraStateLB2.ForeColor = System.Drawing.Color.Green;
-            break;
-          case CameraState.Error:
-            connectBtn2.Enabled = true;
-            composeBtn2.Enabled = true;
-            cameraUrlTB2.Enabled = true;
-            cameraStateLB2.ForeColor = System.Drawing.Color.Red;
-            //Log error
-            break;
-        }
-      });
+		#endregion
 
-      ChangeRecordingStatus(cameraStateLB2, e.State.ToString());
-    }
+		#endregion
 
-    void camera_CameraErrorOccurred(object sender, CameraErrorEventArgs e)
-    {
-      InvokeGuiThread(() => Log.Write("Camera error: " + (e.Details ?? e.Error.ToString())));
-    }
-    #endregion
-
-
-
-
-
-
-    bool IsValidCameraUrl(string url)
+		bool IsValidCameraUrl(string url)
     {
       //TODO make a real check
       if (url.Length > 0)
@@ -237,7 +215,7 @@ namespace GCameraManager
       return false;
     }
 
-    #region Connect Disconnect Compose buttons
+    #region Form buttons
 
       string GetCameraUrl()
       {
@@ -255,7 +233,6 @@ namespace GCameraManager
         Log.Write("Camera1: Composed!");
       }
 
-
       void composeBtn2_Click(object sender, EventArgs e)
       {
         cameraUrlTB2.Text = GetCameraUrl();
@@ -265,34 +242,34 @@ namespace GCameraManager
 
       void connectBtn1_Click(object sender, EventArgs e)
       {
-        ci1.Initialize(cameraUrlTB1.Text);
+        cci1.Connect(cameraUrlTB1.Text);
         Log.Write("Camera1: connected!");
       }
 
       void connectBtn2_Click(object sender, EventArgs e)
       {
-        ci2.Initialize(cameraUrlTB2.Text);
+        cci2.Connect(cameraUrlTB2.Text);
         Log.Write("Camera2: connected!");
       }
 
 
       void disconnectBtn_Click(object sender, EventArgs e)
       {
-        ci1.CancelRecording();
-        ci1.Disconnect();
+        cci1.CancelRecording();
+        cci1.Disconnect();
         Log.Write("Camera1: disconnected!");
       }
 
       void disconnectBtn2_Click(object sender, EventArgs e)
       {
-        ci2.CancelRecording();
-        ci2.Disconnect();
+        cci2.CancelRecording();
+        cci2.Disconnect();
         Log.Write("Camera2: disconnected!");
       }
 
       void startRecordingBtn1_Click(object sender, EventArgs e)
       {
-        ci1.StartRecording();
+        cci1.StartRecording();
         startRecordingBTN1.Enabled = false;
         stopRecordingBTN1.Enabled = true;
         Log.Write("Camera1: Recording started!");
@@ -300,7 +277,7 @@ namespace GCameraManager
 
       void StartRecordingBTN2_Click(object sender, EventArgs e)
       {
-        ci2.StartRecording();
+        cci2.StartRecording();
         startRecordingBTN2.Enabled = false;
         stopRecordingBTN2.Enabled = true;
         Log.Write("Camera2: Recording started!");
@@ -308,42 +285,41 @@ namespace GCameraManager
 
       void stopRecordingBtn1_Click(object sender, EventArgs e)
       {
-        ci1.CancelRecording();
+        cci1.CancelRecording();
         Log.Write("Camera1: Recording stopped!");
       }
-
-
+		
       void StopRecordingBtn2_Click(object sender, EventArgs e)
       {
-        ci2.CancelRecording();
+        cci2.CancelRecording();
         Log.Write("Camera2: Recording stopped!");
       }
-    #endregion
-
-
+    
 
       void InvokeGuiThread(Action action)
       {
         BeginInvoke(action);
       }
 
-      void browseSaveToDirBtn1_Click(object sender, EventArgs e)
-      {
-        if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
-        {
-          saveToDirTb1.Text = folderBrowserDialog1.SelectedPath;
-          Settings.SaveToDirectory = folderBrowserDialog1.SelectedPath;
-          Log.Write("Settings: Output directory changed! New value: " + Settings.SaveToDirectory.ToString());
-        }
-      }
+			void browseSaveToDirBtn1_Click(object sender, EventArgs e)
+			{
+				if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+				{
+					saveToDirTb1.Text = folderBrowserDialog1.SelectedPath;
+					Settings.SaveToDirectory = folderBrowserDialog1.SelectedPath;
+					Log.Write("Settings: Output directory changed! New value: " + Settings.SaveToDirectory.ToString());
+				}
+			}
 
-      void ChangeRecordingStatus(Label label, string status)
-      {
-        InvokeGuiThread(() => { label.Text = status; }); 
-      }
+			void ChangeRecordingStatus(Label label, string status)
+			{
+				InvokeGuiThread(() => { label.Text = status; }); 
+			}
 
-    #region Full screen handling
-      bool isFullScreen = false;
+		#endregion
+
+		#region Full screen handling
+			/*bool isFullScreen = false;
 
       void videoViewerWF1_DoubleClick(object sender, EventArgs e)
       {
@@ -361,7 +337,7 @@ namespace GCameraManager
       void videoViewerWF1_FullScreenLeaveEvent(object sender, EventArgs e)
       {
         isFullScreen = false;
-      }
+      }*/
     #endregion
 
     void recordingOnMotionCB_CheckedChanged(object sender, EventArgs e)
@@ -415,15 +391,24 @@ namespace GCameraManager
       }
     }
 
-		void checkBox1_CheckedChanged(object sender, EventArgs e)
+		void viewCamera_ci1_CheckedChanged(object sender, EventArgs e)
+		{
+			viewCamera_CheckedChanged(sender, cci1);
+		}
+
+		void viewCamera_ci2_CheckedChanged(object sender, EventArgs e)
+		{
+			viewCamera_CheckedChanged(sender, cci2);
+    }
+
+		void viewCamera_CheckedChanged(object sender, CameraConfigurationItem ci)
 		{
 			var cb = sender as CheckBox;
-			if (cb.Checked)
-				videoViewerWF1.Start();
+			ci.VideoViewerVisible = cb.Checked;
+			if (ci.VideoViewerVisible)
+				ci.videoViewer.Start();
 			else
-				videoViewerWF1.Stop();
-
-			Settings.VideoViewer1Visible = cb.Checked;
-    }
+				ci.videoViewer.Stop();
+		}
 	}
 }

@@ -22,5 +22,10 @@ namespace GCameraManager
 		static bool videoViewer1Visible = false;
 		public static bool VideoViewer1Visible { get { return videoViewer1Visible; } set { videoViewer1Visible = value; } }
 
+		static int pixelIntensitySensitivity; //0-255
+		public static int PixelIntensitySensitivity { get { return pixelIntensitySensitivity; } set { pixelIntensitySensitivity = value; } }
+
+		static int pixelAmountSensitivity; //0-10
+		public static int PixelAmountSensitivity { get { return pixelAmountSensitivity / 10; } set { pixelAmountSensitivity = value; } }
 	}
 }
